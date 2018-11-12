@@ -46,7 +46,7 @@ rootProject.ext.LOTTIE_VERSION = "2.8.0"
 rootProject.ext.LITHO_VERSION = "0.7.0"
 rootProject.ext.SO_LOADER_VERSION = "0.2.0"
 
-rootProject.ext.AUTO_VALUE_VERSION = "1.3"
+rootProject.ext.AUTO_VALUE_VERSION = "1.6.2"
 
 rootProject.ext.PARIS_VERSION = "1.2.0"
 

@@ -19,11 +19,9 @@ import com.airbnb.epoxy.EpoxyModel
 import com.airbnb.epoxy.ModelView
 import com.airbnb.epoxy.TextProp
 import com.airbnb.epoxy.paging.PagedListEpoxyController
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
-import org.jetbrains.anko.coroutines.experimental.bg
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class PagingSampleActivity : AppCompatActivity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,14 +39,12 @@ class PagingSampleActivity : AppCompatActivity() {
     }
 }
 
-class TestController : PagedListEpoxyController<User>(
-    modelBuildingHandler = EpoxyAsyncUtil.getAsyncBackgroundHandler()
-) {
+class TestController : PagedListEpoxyController<User>() {
     override fun buildItemModel(currentPosition: Int, item: User?): EpoxyModel<*> {
         return if (item == null) {
             PagingViewModel_()
                 .id(-currentPosition)
-                .name("loading ${currentPosition}")
+                .name("loading $currentPosition")
         } else {
             PagingViewModel_()
                 .id(item.uid)
@@ -85,24 +81,26 @@ class PagingView(context: Context) : AppCompatTextView(context) {
 }
 
 class ActivityViewModel(app : Application) : AndroidViewModel(app) {
-    val db by lazy {
+    private val db by lazy {
         Room.inMemoryDatabaseBuilder(app, PagingDatabase::class.java).build()
     }
     val pagedList : LiveData<PagedList<User>> by lazy {
         LivePagedListBuilder<Int, User>(
             db.userDao().dataSource, 100
-        ).build()
+        )
+
+            .build()
     }
     init {
-        bg {
+        GlobalScope.launch {
             (1..3000).map {
                 User(it)
-            }.let {
-                it.groupBy {
+            }.let { users ->
+                users.groupBy {
                     it.uid / 200
                 }.forEach { group ->
-                    launch(CommonPool) {
-                        delay(group.key.toLong(), TimeUnit.SECONDS)
+                    launch {
+                        delay(group.key.toLong() * 1000)
                         db.userDao().insertAll(group.value)
                     }
                 }
